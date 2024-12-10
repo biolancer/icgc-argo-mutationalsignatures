@@ -7,12 +7,12 @@ process ASSESSMENT {
         'biocontainers/mulled-v2-371b28410c3e53c7f9010677515b1b0eb3764999:0267f53936b6c04b051e07833c218f1fdd2a7cac-0' }" /// container taken from cio-abcd-vip
 
     input:
-    path input_to_reorder
+    tuple val(meta), path(input_to_reorder)
 
     output:
-    path "SBS96_reordered_forCOSMIC.txt"            , emit: reordered_cosmic
-    path "SBS96_reordered_forSIGTOOLS.txt"          , emit: reordered_sigtool
-    path "versions.yml"                             , emit: versions
+    tuple val(meta), path("SBS96_reordered_forCOSMIC.txt")            , emit: reordered_cosmic
+    tuple val(meta), path("SBS96_reordered_forSIGTOOLS.txt")          , emit: reordered_sigtool
+    path "versions.yml"                                               , emit: versions
 
     when:
     task.ext.when == null || task.ext.when

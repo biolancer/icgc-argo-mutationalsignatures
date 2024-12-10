@@ -7,9 +7,14 @@
     "items": {
         "type": "object",
         "properties": {
-            "": {
+            "cohort": {
                 "type": "string",
-                "errorMessage": "WHATTA THE HELL?!?!"
+                "errorMessage": "Please provide a valid ID for your data.",
+                "meta": ["id"]
+            },
+            "data": {
+                "type": "string",
+                "errorMessage": "The provided folder does not exist."
             }
         }
     }

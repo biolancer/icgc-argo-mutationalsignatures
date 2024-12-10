@@ -7,17 +7,16 @@ process MATRIXGENERATOR {
         'docker.io/fauzul/sigprofiler:1.0' }" // needs his own container
 
     input:
-    path input
-    val  output_pattern
+    tuple val(meta), path(input)
     val  filetype
 
 
     output:
-    path "Trinucleotide_matrix_${params.output_pattern}_SBS96.txt",     emit: output_SBS
-    path "Trinucleotide_matrix_${params.output_pattern}_DBS78.txt",     emit: output_DBS, optional: true
-    path "Trinucleotide_matrix_${params.output_pattern}_ID83.txt" ,     emit: output_ID,  optional: true
-    val("process_complete")                                       ,     emit: matgen_finished
-    path "versions.yml"                                           ,     emit: versions
+    tuple val(meta), path("Trinucleotide_matrix_${meta.id}_SBS96.txt"),     emit: output_SBS
+    tuple val(meta), path("Trinucleotide_matrix_${meta.id}_DBS78.txt"),     emit: output_DBS, optional: true
+    tuple val(meta), path("Trinucleotide_matrix_${meta.id}_ID83.txt") ,     emit: output_ID,  optional: true
+    val("process_complete")                                           ,     emit: matgen_finished
+    path "versions.yml"                                               ,     emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -30,7 +29,7 @@ process MATRIXGENERATOR {
     matrixgenerator.py \\
         --filetype $filetype \\
         --input $input \\
-        --output_pattern $output_pattern \\
+        --output_pattern $meta.id \\
         $args \\
         2> $processdir/matrixgenerator.error.log \\
         1> $processdir/matrixgenerator.log

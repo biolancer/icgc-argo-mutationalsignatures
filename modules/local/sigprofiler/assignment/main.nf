@@ -7,14 +7,13 @@ process ASSIGNMENT {
         'docker.io/fauzul/sigprofiler:1.0' }"
 
     input:
-    path input
-    val  output_pattern
+    tuple val(meta), path(input)
     val  filetype
     val  matgen_finished
 
     output:
-    path "output"                   , emit: sigprofiler_output
-    path "versions.yml"             , emit: versions
+    tuple val(meta), path("output")                   , emit: sigprofiler_output
+    path "versions.yml"                               , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -27,7 +26,7 @@ process ASSIGNMENT {
     sigprofiler.py \\
         --filetype $filetype \\
         --input $input \\
-        --output_pattern $output_pattern \\
+        --output_pattern $meta.id \\
         $args \\
         2> $processdir/sigprofiler.error.log \\
         1> $processdir/sigprofiler.log

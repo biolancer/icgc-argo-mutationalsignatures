@@ -8,12 +8,11 @@ process SIGNATURETOOLSLIB {
     containerOptions '-u $(id -u):$(id -g) --entrypoint=""'
 
     input:
-    path input_matrix
-    val  output_pattern
+    tuple val(meta), path(input_matrix)
 
     output:
-    path "*.json"                 , emit: json
-    path "versions.yml"           , emit: versions
+    tuple val(meta), path("*.json")                 , emit: json
+    path "versions.yml"                             , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -24,7 +23,7 @@ process SIGNATURETOOLSLIB {
     """
     signaturetoolslib.R \\
         --input_file  $input_matrix \\
-        --output_name $output_pattern   \\
+        --output_name $meta.id   \\
         $args   \\
         --threads $task.cpus    \\
 

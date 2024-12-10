@@ -47,7 +47,6 @@ workflow MUTATIONALSIGNATURES {
     if ( params.filetype != 'matrix') {
         MATRIXGENERATOR (
             cohort,
-            params.output_pattern,
             params.filetype
         )
         ch_versions = ch_versions.mix(MATRIXGENERATOR.out.versions)
@@ -59,7 +58,7 @@ workflow MUTATIONALSIGNATURES {
 
     if ( params.filetype == 'matrix') {
         ASSESSMENT (
-            params.input
+            cohort
         )
         ch_versions = ch_versions.mix(ASSESSMENT.out.versions)
     } else {
@@ -77,7 +76,6 @@ workflow MUTATIONALSIGNATURES {
         matgen_finished = "process_complete"
         ASSIGNMENT (
             ASSESSMENT.out.reordered_cosmic,
-            params.output_pattern,
             params.filetype,
             matgen_finished
         )
@@ -85,7 +83,6 @@ workflow MUTATIONALSIGNATURES {
     } else {
         ASSIGNMENT (
             cohort,
-            params.output_pattern,
             params.filetype,
             MATRIXGENERATOR.out.matgen_finished.collect()
         )
@@ -98,7 +95,6 @@ workflow MUTATIONALSIGNATURES {
 
     SIGNATURETOOLSLIB (
         ASSESSMENT.out.reordered_sigtool,
-        params.output_pattern
     )
     ch_versions = ch_versions.mix(SIGNATURETOOLSLIB.out.versions)
 
@@ -109,7 +105,6 @@ workflow MUTATIONALSIGNATURES {
     ERRORTRESHOLDING (
         SIGNATURETOOLSLIB.out.json,
         ASSESSMENT.out.reordered_sigtool,
-        params.output_pattern
     )
     ch_versions = ch_versions.mix(ERRORTRESHOLDING.out.versions)
 

@@ -26,8 +26,7 @@ For more details and a quick start guide, please refer to the [usage documentati
 
 ### Global options
 
-- `--input` (**required**): **Absolute** path to your input MAF, matrix or the folder containing the VCFs for analysis
-- `--output_pattern` (**required**): Output naming convention for the analysis
+- `--input` (**required**): Path to the pipeline-conform sample sheet composed of **two values separated by a comma per cohort you wish to analyze:** `outputname,path/to/data`. Each row will be considered as a separate cohort and will be processed in parallel. Please be aware that **all parameters provided in the same pipeline run remain identical between each dataset!**
 - `--outdir` (**required**): Relative or absolute path to the desired output destination
 
 ### SigProfiler tool options (SigProfiler Matrixgenerator and Assignment)
@@ -36,6 +35,7 @@ For more details and a quick start guide, please refer to the [usage documentati
 - `--ref` (**required**): Defines the reference genome from which the data was generated, currently supported options include `'GRCh37'` and `'GRCh38'`
 - `--exome`: This flag defines if the SigProfiler tools should run against the COSMIC exome/panel reference instead of the WGS reference, activate with `--exome true`. [default: ```false```]
 - `--context`: Defines which sequence context types should be assigned to the respective COSMIC catalogues for the SigProfiler Assignment module. Valid options include `"96", "288", "1536", "DINUC", and "ID"`. Running the pipeline with default parameters will perform only SBS96 signature assignment. [default: ```'96'```]
+- `--cosmic_version`: Choose the version of the COSMIC signature reference catalogue against which assignment by SigProfiler should be performed. Currently all catalogues up to `3.3` are supported, including `1, 2, 3, 3.1` and `3.2`. [default: ```3```]
 
 ### signature.tools.lib options
 

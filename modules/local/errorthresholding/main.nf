@@ -8,13 +8,12 @@ process ERRORTRESHOLDING {
         'biocontainers/mulled-v2-e532af651681c2ba0bc6a8a0bd8f7b7dafad9383:0' }"
 
     input:
-    path    json_input
-    path    input_matrix
-    val     output_pattern
+    tuple val(meta), path(json_input)
+    tuple val(meta), path(input_matrix)
 
     output:
-    path "*.json"                   , emit: error_values
-    path "versions.yml"             , emit: versions
+    tuple val(meta), path("*.json")                   , emit: error_values
+    path "versions.yml"                               , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -26,7 +25,7 @@ process ERRORTRESHOLDING {
     error_thresholder.R \\
         --input $json_input \\
         --signature_matrix $input_matrix \\
-        --output $output_pattern \\
+        --output $meta.id \\
         $args \\
 
     cat <<-END_VERSIONS > versions.yml

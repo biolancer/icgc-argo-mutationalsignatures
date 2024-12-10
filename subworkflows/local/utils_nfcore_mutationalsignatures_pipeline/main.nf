@@ -81,8 +81,12 @@ workflow PIPELINE_INITIALISATION {
 
     Channel
         .from(ch_input)
-        .splitCsv(header:false, sep:'', strip:true)
-        .map { it[0] }
+        .splitCsv(header:false, sep:',', strip:true)
+        .map {
+            meta, cohort ->
+            def fmeta = [:]
+            fmeta.id = meta
+            [fmeta, cohort] }
         .unique()
         .set { ch_cohort }
 
