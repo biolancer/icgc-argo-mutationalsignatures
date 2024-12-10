@@ -1,0 +1,44 @@
+process MATRIXGENERATOR {
+    label 'process_low'
+
+    conda "bioconda::sigmut=1.0"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'docker.io/fauzul/sigprofiler:1.0':
+        'docker.io/fauzul/sigprofiler:1.0' }" // needs his own container
+
+    input:
+    path input
+    val  output_pattern
+    val  filetype
+
+
+    output:
+    path "Trinucleotide_matrix_${params.output_pattern}_SBS96.txt",     emit: output_SBS
+    path "Trinucleotide_matrix_${params.output_pattern}_DBS78.txt",     emit: output_DBS, optional: true
+    path "Trinucleotide_matrix_${params.output_pattern}_ID83.txt" ,     emit: output_ID,  optional: true
+    val("process_complete")                                       ,     emit: matgen_finished
+    path "versions.yml"                                           ,     emit: versions
+
+    when:
+    task.ext.when == null || task.ext.when
+
+    script:
+    def args = task.ext.args ?: ''
+    def processdir = "\${PWD}"
+
+    """
+    matrixgenerator.py \\
+        --filetype $filetype \\
+        --input $input \\
+        --output_pattern $output_pattern \\
+        $args \\
+        2> $processdir/matrixgenerator.error.log \\
+        1> $processdir/matrixgenerator.log
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        python: \$(python --version | sed 's/Python //g')
+        SigProfilerMatrixGenerator: \$(python -c "import SigProfilerMatrixGenerator; print(SigProfilerMatrixGenerator.__version__)")
+    END_VERSIONS
+    """
+}

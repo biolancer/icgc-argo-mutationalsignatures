@@ -10,15 +10,18 @@
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
-            "required": ["input", "outdir"],
+            "required": [
+                "input",
+                "outdir",
+                "output_pattern"
+            ],
             "properties": {
                 "input": {
                     "type": "string",
-                    "format": "file-path",
+                    "format": "path",
                     "exists": true,
                     "schema": "assets/schema_input.json",
                     "mimetype": "text/csv",
-                    "pattern": "^\\S+\\.csv$",
                     "description": "Path to comma-separated file containing information about the samples in the experiment.",
                     "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row.",
                     "fa_icon": "fas fa-file-csv"
@@ -28,6 +31,10 @@
                     "format": "directory-path",
                     "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
                     "fa_icon": "fas fa-folder-open"
+                },
+                "output_pattern": {
+                    "type": "string",
+                    "description": "Output naming convention for the output files"
                 },
                 "email": {
                     "type": "string",
@@ -43,34 +50,63 @@
                 }
             }
         },
-        "reference_genome_options": {
-            "title": "Reference genome options",
+        "genomic_reference_options": {
+            "title": "Genomic reference options",
             "type": "object",
-            "fa_icon": "fas fa-dna",
-            "description": "Reference genome related files and options required for the workflow.",
+            "description": "",
+            "default": "",
             "properties": {
-                "genome": {
+                "ref": {
                     "type": "string",
-                    "description": "Name of iGenomes reference.",
-                    "fa_icon": "fas fa-book",
-                    "help_text": "If using a reference genome configured in the pipeline using iGenomes, use this parameter to give the ID for the reference. This is then used to build the full paths for all required reference genome files e.g. `--genome GRCh38`. \n\nSee the [nf-core website docs](https://nf-co.re/usage/reference_genomes) for more details."
-                },
-                "fasta": {
+                    "description": "Defines the version of the reference genome which will be used for count matrix generation. Should be identical to the alignment reference.",
+                    "enum": [
+                        "GRCh37",
+                        "GRCh38"
+                    ]
+                }
+            },
+            "required": [
+                "ref"
+            ]
+        },
+        "sigprofiler_options": {
+            "title": "SigProfiler options",
+            "type": "object",
+            "description": "Define which parameters should be considered for the matrixgenerator and extractor module",
+            "default": "",
+            "properties": {
+                "filetype": {
                     "type": "string",
-                    "format": "file-path",
-                    "exists": true,
-                    "mimetype": "text/plain",
-                    "pattern": "^\\S+\\.fn?a(sta)?(\\.gz)?$",
-                    "description": "Path to FASTA genome file.",
-                    "help_text": "This parameter is *mandatory* if `--genome` is not specified. If you don't have a BWA index available this will be generated for you automatically. Combine with `--save_reference` to save BWA index for future runs.",
-                    "fa_icon": "far fa-file-code"
+                    "description": "Defines the input filetype, either MAF or VCF",
+                    "enum": [
+                        "vcf",
+                        "maf"
+                    ]
                 },
-                "igenomes_ignore": {
+                "exome": {
                     "type": "boolean",
-                    "description": "Do not load the iGenomes reference config.",
-                    "fa_icon": "fas fa-ban",
-                    "hidden": true,
-                    "help_text": "Do not load `igenomes.config` when running the pipeline. You may choose this option if you observe clashes between custom parameters and those supplied in `igenomes.config`."
+                    "description": "Was the data generated using targeted panel/whole exome sequencing?"
+                },
+                "context": {
+                    "type": "string",
+                    "default": "96",
+                    "description": "Defines which exposure estimates should be inferred - SBS96, DINUC and/or ID"
+                }
+            },
+            "required": [
+                "filetype"
+            ]
+        },
+        "signaturetoolslib_options": {
+            "title": "signaturetoolslib options",
+            "type": "object",
+            "description": "Define which parameters should be considered for the signaturetoolslib module",
+            "default": "",
+            "properties": {
+                "n_boots": {
+                    "type": "integer",
+                    "default": 100,
+                    "description": "Number of bootstrap iterations for the fit-function"
                 }
             }
         },
@@ -132,7 +168,7 @@
                 "max_cpus": {
                     "type": "integer",
                     "description": "Maximum number of CPUs that can be requested for any single job.",
-                    "default": 16,
+                    "default": 8,
                     "fa_icon": "fas fa-microchip",
                     "hidden": true,
                     "help_text": "Use to set an upper-limit for the CPU requirement for each process. Should be an integer e.g. `--max_cpus 1`"
@@ -140,7 +176,7 @@
                 "max_memory": {
                     "type": "string",
                     "description": "Maximum amount of memory that can be requested for any single job.",
-                    "default": "128.GB",
+                    "default": "32.GB",
                     "fa_icon": "fas fa-memory",
                     "pattern": "^\\d+(\\.\\d+)?\\.?\\s*(K|M|G|T)?B$",
                     "hidden": true,
@@ -149,7 +185,7 @@
                 "max_time": {
                     "type": "string",
                     "description": "Maximum amount of time that can be requested for any single job.",
-                    "default": "240.h",
+                    "default": "24.h",
                     "fa_icon": "far fa-clock",
                     "pattern": "^(\\d+\\.?\\s*(s|m|h|d|day)\\s*)+$",
                     "hidden": true,
@@ -182,7 +218,14 @@
                     "description": "Method used to save pipeline results to output directory.",
                     "help_text": "The Nextflow `publishDir` option specifies which intermediate files should be saved to the output directory. This option tells the pipeline what method should be used to move these files. See [Nextflow docs](https://www.nextflow.io/docs/latest/process.html#publishdir) for details.",
                     "fa_icon": "fas fa-copy",
-                    "enum": ["symlink", "rellink", "link", "copy", "copyNoFollow", "move"],
+                    "enum": [
+                        "symlink",
+                        "rellink",
+                        "link",
+                        "copy",
+                        "copyNoFollow",
+                        "move"
+                    ],
                     "hidden": true
                 },
                 "email_on_fail": {
@@ -281,7 +324,13 @@
             "$ref": "#/definitions/input_output_options"
         },
         {
-            "$ref": "#/definitions/reference_genome_options"
+            "$ref": "#/definitions/genomic_reference_options"
+        },
+        {
+            "$ref": "#/definitions/sigprofiler_options"
+        },
+        {
+            "$ref": "#/definitions/signaturetoolslib_options"
         },
         {
             "$ref": "#/definitions/institutional_config_options"

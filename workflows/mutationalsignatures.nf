@@ -1,15 +1,26 @@
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    IMPORT MODULES / SUBWORKFLOWS / FUNCTIONS
+    IMPORT NF-CORE MODULES/SUBWORKFLOWS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { FASTQC                 } from '../modules/nf-core/fastqc/main'
-include { MULTIQC                } from '../modules/nf-core/multiqc/main'
 include { paramsSummaryMap       } from 'plugin/nf-validation'
 include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_mutationalsignatures_pipeline'
+include { MULTIQC                } from '../modules/nf-core/multiqc/main'
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    IMPORT LOCAL MODULES/SUBWORKFLOWS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
+include { MATRIXGENERATOR             } from '../modules/local/sigprofiler/matrixgenerator/main'
+include { ASSESSMENT                  } from '../modules/local/assessment/main'
+include { ASSIGNMENT                  } from '../modules/local/sigprofiler/assignment/main'
+include { SIGNATURETOOLSLIB           } from '../modules/local/signaturetoolslib/main'
+include { ERRORTRESHOLDING            } from '../modules/local/errorthresholding/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -20,21 +31,87 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_muta
 workflow MUTATIONALSIGNATURES {
 
     take:
-    ch_samplesheet // channel: samplesheet read in from --input
+    cohort // channel: samplesheet read in from --input
 
     main:
 
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
 
+    log.debug "Using input file: ${cohort}"
+
     //
-    // MODULE: Run FastQC
+    // MODULE : matrixgenerator
     //
-    FASTQC (
-        ch_samplesheet
+
+    if ( params.filetype != 'matrix') {
+        MATRIXGENERATOR (
+            cohort,
+            params.output_pattern,
+            params.filetype
+        )
+        ch_versions = ch_versions.mix(MATRIXGENERATOR.out.versions)
+    }
+
+    //
+    // MODULE : assessment
+    //
+
+    if ( params.filetype == 'matrix') {
+        ASSESSMENT (
+            params.input
+        )
+        ch_versions = ch_versions.mix(ASSESSMENT.out.versions)
+    } else {
+        ASSESSMENT (
+            MATRIXGENERATOR.out.output_SBS
+        )
+        ch_versions = ch_versions.mix(ASSESSMENT.out.versions)
+    }
+
+    //
+    // MODULE : assignment
+    //
+
+    if ( params.filetype == 'matrix') {
+        matgen_finished = "process_complete"
+        ASSIGNMENT (
+            ASSESSMENT.out.reordered_cosmic,
+            params.output_pattern,
+            params.filetype,
+            matgen_finished
+        )
+        ch_versions = ch_versions.mix(ASSIGNMENT.out.versions)
+    } else {
+        ASSIGNMENT (
+            cohort,
+            params.output_pattern,
+            params.filetype,
+            MATRIXGENERATOR.out.matgen_finished.collect()
+        )
+        ch_versions = ch_versions.mix(ASSIGNMENT.out.versions)
+    }
+
+    //
+    // MODULE : signaturetoolslib
+    //
+
+    SIGNATURETOOLSLIB (
+        ASSESSMENT.out.reordered_sigtool,
+        params.output_pattern
     )
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]})
-    ch_versions = ch_versions.mix(FASTQC.out.versions.first())
+    ch_versions = ch_versions.mix(SIGNATURETOOLSLIB.out.versions)
+
+    //
+    // MODULE: errorthresholding
+    //
+
+    ERRORTRESHOLDING (
+        SIGNATURETOOLSLIB.out.json,
+        ASSESSMENT.out.reordered_sigtool,
+        params.output_pattern
+    )
+    ch_versions = ch_versions.mix(ERRORTRESHOLDING.out.versions)
 
     //
     // Collate and save software versions
