@@ -19,6 +19,7 @@ include { MULTIQC                } from '../modules/nf-core/multiqc/main'
 include { MATRIXGENERATOR             } from '../modules/local/sigprofiler/matrixgenerator/main'
 include { ASSESSMENT                  } from '../modules/local/assessment/main'
 include { ASSIGNMENT                  } from '../modules/local/sigprofiler/assignment/main'
+include { ASSIGNMENT_ALT              } from '../modules/local/sigprofiler/assignment_alt/main'
 include { SIGNATURETOOLSLIB           } from '../modules/local/signaturetoolslib/main'
 include { ERRORTRESHOLDING            } from '../modules/local/errorthresholding/main'
 
@@ -37,8 +38,6 @@ workflow MUTATIONALSIGNATURES {
 
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
-
-    log.debug "Using input file: ${cohort}"
 
     //
     // MODULE : matrixgenerator
@@ -69,34 +68,71 @@ workflow MUTATIONALSIGNATURES {
     }
 
     //
-    // MODULE : assignment
+    // Split workflow depending on provided alternate signature catalogue
+    //
+    // Module: sigprofiler
     //
 
-    if ( params.filetype == 'matrix') {
-        matgen_finished = "process_complete"
-        ASSIGNMENT (
-            ASSESSMENT.out.reordered_cosmic,
-            params.filetype,
-            matgen_finished
-        )
-        ch_versions = ch_versions.mix(ASSIGNMENT.out.versions)
+    /// CATALOGUE PROVIDED
+
+    if ( params.signature_catalogue ) {
+
+        if ( params.filetype == 'matrix') {
+            matgen_finished = "process_complete"
+            ASSIGNMENT_ALT (
+                ASSESSMENT.out.reordered_cosmic,
+                params.signature_catalogue,
+                params.filetype,
+                matgen_finished
+            )
+            ch_versions = ch_versions.mix(ASSIGNMENT_ALT.out.versions)
+
+        } else {
+
+            ASSIGNMENT_ALT (
+                cohort,
+                params.signature_catalogue,
+                params.filetype,
+                MATRIXGENERATOR.out.matgen_finished.collect()
+            )
+            ch_versions = ch_versions.mix(ASSIGNMENT_ALT.out.versions)
+        }
     } else {
-        ASSIGNMENT (
-            cohort,
-            params.filetype,
-            MATRIXGENERATOR.out.matgen_finished.collect()
-        )
-        ch_versions = ch_versions.mix(ASSIGNMENT.out.versions)
+
+        /// NO CATALOGUE PROVIDED
+
+        if ( params.filetype == 'matrix') {
+            matgen_finished = "process_complete"
+            ASSIGNMENT (
+                ASSESSMENT.out.reordered_cosmic,
+                params.filetype,
+                matgen_finished
+            )
+            ch_versions = ch_versions.mix(ASSIGNMENT.out.versions)
+        } else {
+            ASSIGNMENT (
+                cohort,
+                params.filetype,
+                MATRIXGENERATOR.out.matgen_finished.collect()
+            )
+            ch_versions = ch_versions.mix(ASSIGNMENT.out.versions)
+        }
     }
 
-    //
-    // MODULE : signaturetoolslib
-    //
-
-    SIGNATURETOOLSLIB (
-        ASSESSMENT.out.reordered_sigtool,
-    )
-    ch_versions = ch_versions.mix(SIGNATURETOOLSLIB.out.versions)
+    if ( params.signature_catalogue ) {
+        SIGNATURETOOLSLIB (
+            ASSESSMENT.out.reordered_sigtool,
+            params.signature_catalogue
+        )
+        ch_versions = ch_versions.mix(SIGNATURETOOLSLIB.out.versions)
+    } else {
+        sigtoolscat = "COSMIC30_subs_signatures"
+        SIGNATURETOOLSLIB (
+            ASSESSMENT.out.reordered_sigtool,
+            sigtoolscat
+        )
+        ch_versions = ch_versions.mix(SIGNATURETOOLSLIB.out.versions)
+    }
 
     //
     // MODULE: errorthresholding

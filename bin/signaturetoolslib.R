@@ -1,4 +1,4 @@
-#!/usr/bin/Rscript
+#!/usr/bin/env Rscript
 
 ### Initial script written by Paula Stancl
 ### Adapted for nf-core workflow by Lancelot Seillier
@@ -13,6 +13,8 @@ option_list = list(
                 help="Output file", metavar="character"),
     make_option(c("-n", "--boots"), type="integer", default=NULL,
                 help="Number of bootstrapping iterations", metavar="integer"),
+    make_option(c("-c", "--catalogue"), type="character", default=NULL,
+                help="Catalogue used for assignment", metavar="character"),
     make_option(c("-t", "--threads"), type="integer", default=NULL,
                 help="Threads used for assignment", metavar="integer")
 );
@@ -34,6 +36,12 @@ OUT_NAME <- opt$output_name
 BOOTS <- opt$boots
 THREADS <- opt$threads
 
+if (opt$catalogue == "COSMIC30_subs_signatures") {
+    CAT <- COSMIC30_subs_signatures
+} else {
+    CAT <- read.table(opt$catalogue, row.names = 1, header = TRUE, check.names = FALSE)
+}
+
 ## Import matrix of counts
 mut_mat_ICGC <- read.table(INPUT_MAT, row.names = 1, header=TRUE, check.names = FALSE)
 
@@ -53,7 +61,7 @@ assignSignatures <- function(input_matrix, sig_matrix, boots_n, threads) {
 
 ## Assign the signatures
 ## Currently testing with COSMIC 30 signatures (To update)
-sign_res <- assignSignatures(mut_mat_ICGC, COSMIC30_subs_signatures, BOOTS, THREADS)
+sign_res <- assignSignatures(mut_mat_ICGC, CAT, BOOTS, THREADS)
 
 ### Save output as JSON
 signature.tools.lib::fitToJSON(sign_res,paste0(OUT_NAME, ".json"))

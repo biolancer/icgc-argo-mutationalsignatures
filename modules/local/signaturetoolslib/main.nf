@@ -3,12 +3,13 @@ process SIGNATURETOOLSLIB {
 
     conda "r-base=4.2.3,r-optparse=1.7,umccr::r-signature.tools.lib=2.1.2,r-devtools=2.4.5"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'docker.io/biolancer/signaturetoolslib-docker:latest':
-        'docker.io/biolancer/signaturetoolslib-docker:latest' }"
+        'docker.io/biolancer/sigtools-new-docker:latest':
+        'docker.io/biolancer/sigtools-new-docker:latest' }"
     containerOptions '-u $(id -u):$(id -g) --entrypoint=""'
 
     input:
     tuple val(meta), path(input_matrix)
+    val signature_catalogue
 
     output:
     tuple val(meta), path("*.json")                 , emit: json
@@ -22,9 +23,10 @@ process SIGNATURETOOLSLIB {
 
     """
     signaturetoolslib.R \\
-        --input_file  $input_matrix \\
+        --input_file $input_matrix \\
         --output_name $meta.id   \\
         $args   \\
+        --catalogue $signature_catalogue \\
         --threads $task.cpus    \\
 
     cat <<-END_VERSIONS > versions.yml
