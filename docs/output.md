@@ -6,38 +6,72 @@ This document describes the output produced by the pipeline. Most of the plots a
 
 The directories listed below will be created in the results directory after the pipeline has finished. All paths are relative to the top-level results directory.
 
-<!-- TODO nf-core: Write this documentation describing your workflow's output -->
-
 ## Pipeline overview
 
 The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes data using the following steps:
 
-- [FastQC](#fastqc) - Raw read QC
+- [SigProfiler Matrixgenerator](#matrix-generation) - Generation of the most commonly used SBS, DBS and InDel count matrices based on the provided input data
+- [Assessment of Trinucleotide context](#assessment) - Adaption of row orders of the SBS96 mutational count matrices for downstream compatibility with SigProfiler an signature.tools.lib using a [self-written python script](/bin/assessment.py).
+- [Assignment using SigProfiler Assignment](#sigprofiler-assignment) - SBS96 assignment against the chosen reference catalogue using SigProfiler Assignment, including metadata of the assignment and TMB estimations per signature
+- [Assignment using signature.tools.lib](#signaturetoolslib-assignment) - SBS96 assignment against the chosen reference catalogue using signature.tools.lib.
+- [Error Calculation](#error-calculation) - Error estimation based on the differences in the assignments between the signature.tools.lib assignment and the assessed SBS96 catalogue of SigProfiler Assignment for COSMIC.
 - [MultiQC](#multiqc) - Aggregate report describing results and QC from the whole pipeline
 - [Pipeline information](#pipeline-information) - Report metrics generated during the workflow execution
 
-### FastQC
+### Matrix Generation
 
 <details markdown="1">
 <summary>Output files</summary>
 
-- `fastqc/`
-  - `*_fastqc.html`: FastQC report containing quality metrics.
-  - `*_fastqc.zip`: Zip archive containing the FastQC report, tab-delimited data file and plot images.
+- `matrixgenerator/{cohort}/`
+  - `Trinucleotide_matrix_{cohort}_SBS96.txt`: Mutational assignments of the input SNVs to the [trinucleotide context SBS96](https://osf.io/s93d5/wiki/5.%20Output%20-%20SBS/).
+  - `Trinucleotide_matrix_{cohort}_DBS78.txt`: Mutational assignments of the input DBSs to the [dinucleotide context DBS78](https://osf.io/s93d5/wiki/5.%20Output%20-%20DBS/).
+  - `Trinucleotide_matrix_{cohort}_ID83.txt`: Mutational assignments of the input InDels to the [repeat and microhomology indel context ID83](https://osf.io/s93d5/wiki/5.%20Output%20-%20ID/).
 
 </details>
 
-[FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/) gives general quality metrics about your sequenced reads. It provides information about the quality score distribution across your reads, per base sequence content (%A/T/G/C), adapter contamination and overrepresented sequences. For further reading and documentation see the [FastQC help pages](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/).
+### Assessment
 
-![MultiQC - FastQC sequence counts plot](images/mqc_fastqc_counts.png)
+<details markdown="1">
+<summary>Output files</summary>
 
-![MultiQC - FastQC mean quality scores plot](images/mqc_fastqc_quality.png)
+- `assessment/{cohort}/`
+  - `SBS96_reordered_forCOSMIC.txt`: Mutational counts reordered to adhere to the COSMIC reference catalogue row order.
+  - `SBS96_reordered_forSIGTOOLS.txt`: Mutational counts reordered to adhere to the SIGNAL reference catalogue row order.
 
-![MultiQC - FastQC adapter content plot](images/mqc_fastqc_adapter.png)
+</details>
 
-:::note
-The FastQC plots displayed in the MultiQC report shows _untrimmed_ reads. They may contain adapter sequence and potentially regions with low quality.
-:::
+### SigProfiler Assignment
+
+<details markdown="1">
+<summary>Output files</summary>
+
+- `assignment/{cohort}/sigprofiler/output/Assignment_Solution/`
+  - `Activities`: Per sample assignment of the SBS96 catalogue to the reference catalogue as tab-separated text file, including plots showing the absolute activities per sample and the estimated TMB contribution per sample to each signature.
+  - `Signatures`: Aggregated results of the per trinucleotide attribution to each signature in the reference for the whole cohort as tab-separated text file.
+  - `Solution_Stats`: Metadata of the NMF iterations and the respective statistics per iteration.
+
+</details>
+
+### signature.tools.lib Assignment
+
+<details markdown="1">
+<summary>Output files</summary>
+
+- `assignment/{cohort}/signaturetoolslib/`
+  - `{cohort}.json`: Aggregated results containing the per sample activities per trinucleotide and the per sample assignment to each signature in JSON format.
+
+</details>
+
+### Error Calculation
+
+<details markdown="1">
+<summary>Output files</summary>
+
+- `errorthresholding/{cohort}/`
+  - `{cohort}_errors.json`: JSON containing the Kullback-Leibler-Divergence, Root-Mean Square Error, Sum of Absolute Differences and the Hellinger distance per cohort.
+
+</details>
 
 ### MultiQC
 

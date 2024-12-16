@@ -10,7 +10,7 @@
 
 ## Introduction
 
-**icgc-argo-mutationalsignatures** is a bioinformatics pipeline that can be used to convert GDC MAF files or a collection of VCF files into mutational count matrices and performs both signature assignment using SigProfiler and signature.tools.lib and calculates error statistics for the assignment performance.
+**icgc-argo-mutationalsignatures** is a bioinformatics pipeline that can be used to convert GDC MAF files or a collection of VCF files into mutational count matrices and performs both signature assignment using SigProfiler and signature.tools.lib, calculating error statistics for the assignment performance. The workflow can also be started from mutational count matrices and allows for the assignment against non-COSMIC reference catalogues.
 
 ![workflow_diagram](./assets/workflow_diagramm.png)
 
@@ -18,16 +18,21 @@
 2. Assessment of row orders to ensure full compatibility between the reference catalogues of each assignment tool and the input data.
 3. Assignment of SBS signatures to the COSMIC mutational signature catalogue using ([`SigProfilerExtractor`](https://osf.io/t6j7u/wiki/home/)) and ([`signature.tools.lib`](https://github.com/Nik-Zainal-Group/signature.tools.lib))
 4. Calculation of error thresholds using Kullback-Leibler divergence, root-square mean error, sum of absolute distances and Hellinger Distance.
-5. Generation of a ([`MultiQC`](https://multiqc.info/)) report containing run information and log data.
+5. Generation of a ([`MultiQC`](https://multiqc.info/)) report containing run information, software versions and log data.
 
 ## Usage
 
-For more details and a quick start guide, please refer to the [usage documentation](https://nf-co.re/icgcargomutsig/usage) and the [parameter documentation](https://nf-co.re/icgcargomutsig/parameters).
+For more details, please refer to the [usage documentation](docs/usage.md). In principle, you can invoke the workflow using the rough command structure:
+
+`nextflow run main.nf -c nextflow.config --input '/path/to/samplesheet' --filetype 'vcf/maf/matrix' --outdir '/path/to/output' --ref 'GRCh37/GRCh38' [OPTIONS] -profile docker/singularity`
+
+You may need `sudo` privilege to run the workflow using `docker`.
 
 ### Global options
 
 - `--input` (**required**): Path to the pipeline-conform sample sheet composed of **two values separated by a comma per cohort you wish to analyze:** `outputname,path/to/data`. Each row will be considered as a separate cohort and will be processed in parallel. Please be aware that **all parameters provided in the same pipeline run remain identical between each dataset!**
 - `--outdir` (**required**): Relative or absolute path to the desired output destination
+- `--signature_catalogue`: Path to a **tab-separated alternative reference catalogue** for signature assignment. This catalogue will be provided to all tools in the workflow.
 
 ### SigProfiler tool options (SigProfiler Matrixgenerator and Assignment)
 
@@ -36,6 +41,7 @@ For more details and a quick start guide, please refer to the [usage documentati
 - `--exome`: This flag defines if the SigProfiler tools should run against the COSMIC exome/panel reference instead of the WGS reference, activate with `--exome true`. [default: ```false```]
 - `--context`: Defines which sequence context types should be assigned to the respective COSMIC catalogues for the SigProfiler Assignment module. Valid options include `"96", "288", "1536", "DINUC", and "ID"`. Running the pipeline with default parameters will perform only SBS96 signature assignment. [default: ```'96'```]
 - `--cosmic_version`: Choose the version of the COSMIC signature reference catalogue against which assignment by SigProfiler should be performed. Currently all catalogues up to `3.3` are supported, including `1, 2, 3, 3.1` and `3.2`. [default: ```3```]
+- `--exclude_sigs`: Signature groups defined by [COSMIC which could be excluded](https://github.com/alexandrovlab/SigProfilerAssignment?tab=readme-ov-file#-signature-subgroups) from signature assignment for SigProfilerAssignment as comma-separated value string. [default: `None`]
 
 ### signature.tools.lib options
 
@@ -53,7 +59,7 @@ For more details and a quick start guide, please refer to the [usage documentati
 
 ## Frequently Asked Questions and known "bugs":
 
-- The Error Thresholding Module breaks die to the error `Error: dims [product 31] do not match the length of object [96]`:
+- The Error Thresholding Module breaks due to the error `Error: dims [product 31] do not match the length of object [96]`:
   A border case for the mutational signature assignment pipeline is providing a single sample for analysis. As the error thresholding module expects a matrix as input for calculating error statistics, a single sample would will be parsed as a vector and thus break the analysis. Please provide more than a single sample to the pipeline to circumvent this error.
 
 - The Error Thresholding Module breaks due to a `lexical error` in the `read_json` step:
@@ -61,9 +67,8 @@ For more details and a quick start guide, please refer to the [usage documentati
 
 ## Pipeline output
 
-To see the results of an example test run with a full size dataset refer to the [results](https://nf-co.re/icgcargomutsig/results) tab on the nf-core website pipeline page.
 For more details about the output files and reports, please refer to the
-[output documentation](https://nf-co.re/icgcargomutsig/output).
+[output documentation](/docs/output.md).
 
 ## Credits
 

@@ -10,9 +10,14 @@
 
 ## Pipeline tools
 
-- [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
+- [SigProfiler toolsuite](https://cancer.sanger.ac.uk/signatures/tools/)
 
-  > Andrews, S. (2010). FastQC: A Quality Control Tool for High Throughput Sequence Data [Online].
+> Khandekar, A., Vangara, R., Barnes, M. et al. Visualizing and exploring patterns of large mutational events with SigProfilerMatrixGenerator. BMC Genomics 24, 469 (2023). https://doi.org/10.1186/s12864-023-09584-y
+> Marcos Díaz-Gay, Raviteja Vangara, Mark Barnes, Xi Wang, S M Ashiqul Islam, Ian Vermes, Stephen Duke, Nithish Bharadhwaj Narasimman, Ting Yang, Zichen Jiang, Sarah Moody, Sergey Senkin, Paul Brennan, Michael R Stratton, Ludmil B Alexandrov, Assigning mutational signatures to individual samples and individual somatic mutations with SigProfilerAssignment, Bioinformatics, Volume 39, Issue 12, December 2023, btad756, https://doi.org/10.1093/bioinformatics/btad756
+
+- [signature.tools.lib](https://github.com/Nik-Zainal-Group/signature.tools.lib)
+
+> Degasperi, A., Amarante, T.D., Czarnecki, J. et al. A practical framework and online tool for mutational signature analyses show intertissue variation and driver dependencies. Nat Cancer 1, 249–263 (2020). https://doi.org/10.1038/s43018-020-0027-5
 
 - [MultiQC](https://pubmed.ncbi.nlm.nih.gov/27312411/)
 
