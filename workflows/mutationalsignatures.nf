@@ -20,7 +20,8 @@ include { MATRIXGENERATOR             } from '../modules/local/sigprofiler/matri
 include { ASSESSMENT                  } from '../modules/local/assessment/main'
 include { ASSIGNMENT                  } from '../modules/local/sigprofiler/assignment/main'
 include { ASSIGNMENT_ALT              } from '../modules/local/sigprofiler/assignment_alt/main'
-include { SIGNATURETOOLSLIB           } from '../modules/local/signaturetoolslib/main'
+include { SIGNATURETOOLSLIB           } from '../modules/local/signaturetoolslib/assignment/main'
+include { SIGNATURETOOLSLIB_ALT       } from '../modules/local/signaturetoolslib/assignment_alt/main'
 include { ERRORTRESHOLDING            } from '../modules/local/errorthresholding/main'
 
 /*
@@ -77,11 +78,13 @@ workflow MUTATIONALSIGNATURES {
 
     if ( params.signature_catalogue ) {
 
+        signature_catalogue_ch = Channel.fromPath(params.signature_catalogue)
+
         if ( params.filetype == 'matrix') {
             matgen_finished = "process_complete"
             ASSIGNMENT_ALT (
                 ASSESSMENT.out.reordered_cosmic,
-                params.signature_catalogue,
+                signature_catalogue_ch,
                 params.filetype,
                 matgen_finished
             )
@@ -91,7 +94,7 @@ workflow MUTATIONALSIGNATURES {
 
             ASSIGNMENT_ALT (
                 cohort,
-                params.signature_catalogue,
+                signature_catalogue_ch,
                 params.filetype,
                 MATRIXGENERATOR.out.matgen_finished.collect()
             )
@@ -120,16 +123,14 @@ workflow MUTATIONALSIGNATURES {
     }
 
     if ( params.signature_catalogue ) {
-        SIGNATURETOOLSLIB (
+        SIGNATURETOOLSLIB_ALT (
             ASSESSMENT.out.reordered_sigtool,
-            params.signature_catalogue
+            signature_catalogue_ch
         )
-        ch_versions = ch_versions.mix(SIGNATURETOOLSLIB.out.versions)
+        ch_versions = ch_versions.mix(SIGNATURETOOLSLIB_ALT.out.versions)
     } else {
-        sigtoolscat = "COSMIC30_subs_signatures"
         SIGNATURETOOLSLIB (
-            ASSESSMENT.out.reordered_sigtool,
-            sigtoolscat
+            ASSESSMENT.out.reordered_sigtool
         )
         ch_versions = ch_versions.mix(SIGNATURETOOLSLIB.out.versions)
     }
@@ -138,11 +139,21 @@ workflow MUTATIONALSIGNATURES {
     // MODULE: errorthresholding
     //
 
-    ERRORTRESHOLDING (
-        SIGNATURETOOLSLIB.out.json,
-        ASSESSMENT.out.reordered_sigtool,
+    /// CATALOGUE PROVIDED
+
+    if ( params.signature_catalogue ) {
+            ERRORTRESHOLDING (
+                SIGNATURETOOLSLIB_ALT.out.json,
+                ASSESSMENT.out.reordered_sigtool,
+            )
+            ch_versions = ch_versions.mix(ERRORTRESHOLDING.out.versions)
+    } else {
+            ERRORTRESHOLDING (
+                SIGNATURETOOLSLIB.out.json,
+                ASSESSMENT.out.reordered_sigtool,
     )
     ch_versions = ch_versions.mix(ERRORTRESHOLDING.out.versions)
+    }
 
     //
     // Collate and save software versions

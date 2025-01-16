@@ -5,11 +5,10 @@ process SIGNATURETOOLSLIB {
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'docker.io/biolancer/sigtools-new-docker:latest':
         'docker.io/biolancer/sigtools-new-docker:latest' }"
-    containerOptions '-u $(id -u):$(id -g) --entrypoint=""'
+    containerOptions '-v $(pwd):$(pwd) --entrypoint=""'
 
     input:
     tuple val(meta), path(input_matrix)
-    val signature_catalogue
 
     output:
     tuple val(meta), path("*.json")                 , emit: json
@@ -26,7 +25,7 @@ process SIGNATURETOOLSLIB {
         --input_file $input_matrix \\
         --output_name $meta.id   \\
         $args   \\
-        --catalogue $signature_catalogue \\
+        --catalogue "COSMIC30_subs_signatures" \\
         --threads $task.cpus    \\
 
     cat <<-END_VERSIONS > versions.yml
