@@ -1,10 +1,11 @@
 process ASSIGNMENT_ALT {
-    label 'process_high'
+    label 'process_medium'
 
     conda "bioconda::sigmut=1.0"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'docker.io/fauzul/sigprofiler:1.0':
-        'docker.io/fauzul/sigprofiler:1.0' }"
+        'docker.io/katiad/sigprofiler:version1.0':
+        'docker.io/katiad/sigprofiler:version1.0' }"
+    containerOptions { workflow.containerEngine == 'singularity' ? '--writable-tmpfs' : ''}
 
     input:
     tuple val(meta), path(input)

@@ -3,8 +3,8 @@ process MATRIXGENERATOR {
 
     conda "bioconda::sigmut=1.0"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'docker.io/fauzul/sigprofiler:1.0':
-        'docker.io/fauzul/sigprofiler:1.0' }" // needs his own container
+        'docker.io/katiad/sigprofiler:version1.0':
+        'docker.io/katiad/sigprofiler:version1.0' }"
 
     input:
     tuple val(meta), path(input)

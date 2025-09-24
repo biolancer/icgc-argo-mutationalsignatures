@@ -78,7 +78,8 @@ workflow MUTATIONALSIGNATURES {
 
     if ( params.signature_catalogue ) {
 
-        signature_catalogue_ch = Channel.fromPath(params.signature_catalogue)
+        signature_catalogue_ch = file(params.signature_catalogue)
+        //Channel.fromPath(params.signature_catalogue)
 
         if ( params.filetype == 'matrix') {
             matgen_finished = "process_complete"

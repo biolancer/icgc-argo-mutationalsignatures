@@ -147,8 +147,8 @@ def main(argv=None):
             maf_for_analysis = maf_input_routine(args.input, args.ref)
             os.mkdir('assignment')
             maf_for_analysis.to_csv('./assignment/' + args.output_pattern + '.maf', index = False, sep="\t")
-            '''Install reference genome'''
-            genInstall.install(args.ref, bash=True)
+            #'''Install reference genome''' -- NEW CONTAINER HAS PREINSTALLED REFGEN -- KEPT IN CASE OF DEPRECATION
+            #genInstall.install(args.ref, bash=True)
             '''Run the Matrix Generator Module to generate matrices for SBS96 from input data'''
             sigpro_func("./assignment", "vcf", args.output_pattern, args.ref, args.exome, args.context, args.cosmic_version, args.exclude_sigs)
             shutil.move('./' + args.output_pattern, './output')
@@ -159,8 +159,8 @@ def main(argv=None):
             os.mkdir('assignment')
             for file in glob.glob(args.input + '/*.vcf'):
                 shutil.copy(file, './assignment')
-            '''Install reference genome'''
-            genInstall.install(args.ref, bash=True)
+            #'''Install reference genome''' -- NEW CONTAINER HAS PREINSTALLED REFGEN -- KEPT IN CASE OF DEPRECATION
+            #genInstall.install(args.ref, bash=True)
             '''Run the Matrix Generator Module to generate matrices for SBS96 from input data'''
             sigpro_func("./assignment", "vcf",args.output_pattern, args.ref, args.exome, args.context, args.cosmic_version, args.exclude_sigs)
             shutil.move('./' + args.output_pattern, './output')
@@ -171,8 +171,8 @@ def main(argv=None):
         if os.path.isfile(args.input):
             os.mkdir('assignment')
             mutcount_matrix = pd.read_csv(args.input, index_col=0, sep="\t")
-            '''Install reference genome'''
-            genInstall.install(args.ref, bash=True)
+            #'''Install reference genome''' -- NEW CONTAINER HAS PREINSTALLED REFGEN -- KEPT IN CASE OF DEPRECATION
+            #genInstall.install(args.ref, bash=True)
             '''Run the Matrix Generator Module to generate matrices for SBS96 from input data'''
             sigpro_func(mutcount_matrix, "matrix", args.output_pattern, args.ref, args.exome, args.context, args.cosmic_version, args.exclude_sigs)
             shutil.move('./' + args.output_pattern, './output')
