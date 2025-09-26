@@ -1,11 +1,11 @@
 process SIGNATURETOOLSLIB_ALT {
-    label 'process_high'
+    label 'process_medium'
 
     conda "r-base=4.2.3,r-optparse=1.7,umccr::r-signature.tools.lib=2.1.2,r-devtools=2.4.5"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'docker.io/biolancer/sigtools-new-docker:latest':
         'docker.io/biolancer/sigtools-new-docker:latest' }"
-    containerOptions '-v $(pwd):$(pwd) --entrypoint=""'
+    containerOptions { workflow.containerEngine == 'singularity' ? '' : '-v $(pwd):$(pwd) --entrypoint=""'}
 
     input:
     tuple val(meta), path(input_matrix)
