@@ -40,7 +40,7 @@ You may need `sudo` privilege to run the workflow using `docker`.
 - `--ref` (**required**): Defines the reference genome from which the data was generated, currently supported options include `'GRCh37'` and `'GRCh38'`
 - `--exome`: This flag defines if the SigProfiler tools should run against the COSMIC exome/panel reference instead of the WGS reference, activate with `--exome true`. [default: ```false```]
 - `--context`: Defines which sequence context types should be assigned to the respective COSMIC catalogues for the SigProfiler Assignment module. Valid options include `"96", "288", "1536", "DINUC", and "ID"`. Running the pipeline with default parameters will perform only SBS96 signature assignment. [default: ```'96'```]
-- `--cosmic_version`: Choose the version of the COSMIC signature reference catalogue against which assignment by SigProfiler should be performed. Currently all catalogues up to `3.3` are supported, including `1, 2, 3, 3.1` and `3.2`. [default: ```3```]
+- `--cosmic_version`: Choose the version of the COSMIC signature reference catalogue against which assignment by SigProfiler should be performed. Currently all catalogues up to `3.4` are supported, including `1, 2, 3.1, 3.2` and `3.3`. [default: ```3.4```]
 - `--exclude_sigs`: Signature groups defined by [COSMIC which could be excluded](https://github.com/alexandrovlab/SigProfilerAssignment?tab=readme-ov-file#-signature-subgroups) from signature assignment for SigProfilerAssignment as comma-separated value string. [default: `None`]
 
 ### signature.tools.lib options
