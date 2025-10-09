@@ -119,7 +119,7 @@ def process(argv=None):
             os.mkdir('matgen')
             maf_for_analysis.to_csv('./matgen/' + args.output_pattern + '.maf', index = False, sep="\t")
             #'''Install reference genome''' -- NEW CONTAINER HAS PREINSTALLED REFGEN -- KEPT IN CASE OF DEPRECATION
-            #genInstall.install(args.ref, bash=True)
+            genInstall.install(args.ref, bash=True)
             '''Run the Matrix Generator Module to generate matrices for SBS96 from input data'''
             matrices = matGen.SigProfilerMatrixGeneratorFunc(args.output_pattern, args.ref, './matgen', exome=args.exome, bed_file=None, chrom_based=False, plot=False, tsb_stat=False, seqInfo=False)
             '''Move output files and rename if required.'''
@@ -138,7 +138,7 @@ def process(argv=None):
             for file in glob.glob(args.input + '/*.vcf'):
                 shutil.copy(file, './matgen')
             #'''Install reference genome''' -- NEW CONTAINER HAS PREINSTALLED REFGEN -- KEPT IN CASE OF DEPRECATION
-            #genInstall.install(args.ref, bash=True)
+            genInstall.install(args.ref, bash=True)
             '''Run the Matrix Generator Module to generate matrices for SBS96 from input data'''
             matrices = matGen.SigProfilerMatrixGeneratorFunc(args.output_pattern, args.ref, './matgen', exome=args.exome, bed_file=None, chrom_based=False, plot=False, tsb_stat=False, seqInfo=False)
             '''Move output files and rename if required.'''
