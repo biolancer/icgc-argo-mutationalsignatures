@@ -125,7 +125,7 @@ Define the signature assignment routine
 '''
 
 def sigpro_func_alt(sample, output_pattern, filetype, ref, context, signature_database):
-    sig.cosmic_fit(samples=sample, output=output_pattern, input_type=filetype, genome_build=ref, context_type=context, signature_database=signature_database)
+    sig.cosmic_fit(samples=sample, output=output_pattern, input_type=filetype, genome_build=ref, context_type=context, signature_database=signature_database, make_plots=False)
 
 ############################################################################################################
 
@@ -137,7 +137,7 @@ def main(argv=None):
             os.mkdir('assignment')
             maf_for_analysis.to_csv('./assignment/' + args.output_pattern + '.maf', index = False, sep="\t")
             #'''Install reference genome''' -- NEW CONTAINER HAS PREINSTALLED REFGEN -- KEPT IN CASE OF DEPRECATION
-            genInstall.install(args.ref, bash=True)
+            #genInstall.install(args.ref, bash=True)
             '''Run the Matrix Generator Module to generate matrices for SBS96 from input data'''
             sigpro_func_alt("./assignment", args.output_pattern, "vcf", args.ref, args.context, args.signature_database)
             shutil.move('./' + args.output_pattern, './output')
@@ -149,7 +149,7 @@ def main(argv=None):
             for file in glob.glob(args.input + '/*.vcf'):
                 shutil.copy(file, './assignment')
             #'''Install reference genome''' -- NEW CONTAINER HAS PREINSTALLED REFGEN -- KEPT IN CASE OF DEPRECATION
-            genInstall.install(args.ref, bash=True)
+            #genInstall.install(args.ref, bash=True)
             '''Run the Matrix Generator Module to generate matrices for SBS96 from input data'''
             sigpro_func_alt("./assignment", args.output_pattern, "vcf", args.ref, args.context, args.signature_database)
             shutil.move('./' + args.output_pattern, './output')
@@ -161,7 +161,7 @@ def main(argv=None):
             os.mkdir('assignment')
             mutcount_matrix = pd.read_csv(args.input, index_col=0, sep="\t")
             #'''Install reference genome''' -- NEW CONTAINER HAS PREINSTALLED REFGEN -- KEPT IN CASE OF DEPRECATION
-            genInstall.install(args.ref, bash=True)
+            #genInstall.install(args.ref, bash=True)
             '''Run the Matrix Generator Module to generate matrices for SBS96 from input data'''
             sigpro_func_alt(mutcount_matrix, args.output_pattern, "matrix", args.ref, args.context, args.signature_database)
             shutil.move('./' + args.output_pattern, './output')
