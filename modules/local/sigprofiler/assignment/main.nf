@@ -3,8 +3,8 @@ process ASSIGNMENT {
 
     conda "bioconda::sigmut=1.0"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'docker.io/katiad/sigprofiler:version1.0':
-        'docker.io/katiad/sigprofiler:version1.0' }"
+        'quay.io/biocontainers/sigprofilerassignment:1.1.3--pyhdfd78af_0':
+        'quay.io/biocontainers/sigprofilerassignment:1.1.3--pyhdfd78af_0' }"
     containerOptions { workflow.containerEngine == 'singularity' ? '--writable-tmpfs' : ''}
 
     input:
