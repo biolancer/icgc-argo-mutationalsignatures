@@ -50,6 +50,12 @@ def parse_args(argv=None):
         default="GRCh38"
     )
     parser.add_argument(
+        "--refdir",
+        type=str,
+        help="Path to the directory where the reference genome is installed.",
+        default=""
+    )
+    parser.add_argument(
         "--exome",
         help="Was the input data derived from Exome/Panel data or WGS data?",
         action='store_true'
@@ -135,8 +141,17 @@ logger = logging.getLogger()
 Define the signature assignment routine
 '''
 
-def sigpro_func(sample, filetype, output_pattern, ref, exome, context, cosmic_version, exclude_sigs):
-    sig.cosmic_fit(samples=sample, output=output_pattern, input_type=filetype, genome_build=ref, exome=exome, context_type=context, cosmic_version=cosmic_version, exclude_signature_subgroups=exclude_sigs, make_plots=False)
+def sigpro_func(sample, filetype, output_pattern, ref, refdir, exome, context, cosmic_version, exclude_sigs):
+    sig.cosmic_fit(samples=sample,
+                   output=output_pattern,
+                   input_type=filetype,
+                   genome_build=ref,
+                   exome=exome,
+                   context_type=context,
+                   cosmic_version=cosmic_version,
+                   exclude_signature_subgroups=exclude_sigs,
+                   make_plots=False,
+                   volume=refdir)
 
 ############################################################################################################
 
@@ -147,10 +162,8 @@ def main(argv=None):
             maf_for_analysis = maf_input_routine(args.input, args.ref)
             os.mkdir('assignment')
             maf_for_analysis.to_csv('./assignment/' + args.output_pattern + '.maf', index = False, sep="\t")
-            #'''Install reference genome''' -- NEW CONTAINER HAS PREINSTALLED REFGEN -- KEPT IN CASE OF DEPRECATION
-            #genInstall.install(args.ref, bash=True)
             '''Run the Matrix Generator Module to generate matrices for SBS96 from input data'''
-            sigpro_func("./assignment", "vcf", args.output_pattern, args.ref, args.exome, args.context, args.cosmic_version, args.exclude_sigs)
+            sigpro_func("./assignment", "vcf", args.output_pattern, args.ref, args.refdir, args.exome, args.context, args.cosmic_version, args.exclude_sigs)
             shutil.move('./' + args.output_pattern, './output')
         else:
             raise ValueError(f"The given input MAF file {args.input} was not found!")
@@ -159,10 +172,8 @@ def main(argv=None):
             os.mkdir('assignment')
             for file in glob.glob(args.input + '/*.vcf'):
                 shutil.copy(file, './assignment')
-            #'''Install reference genome''' -- NEW CONTAINER HAS PREINSTALLED REFGEN -- KEPT IN CASE OF DEPRECATION
-            #genInstall.install(args.ref, bash=True)
             '''Run the Matrix Generator Module to generate matrices for SBS96 from input data'''
-            sigpro_func("./assignment", "vcf",args.output_pattern, args.ref, args.exome, args.context, args.cosmic_version, args.exclude_sigs)
+            sigpro_func("./assignment", "vcf",args.output_pattern, args.ref, args.refdir, args.exome, args.context, args.cosmic_version, args.exclude_sigs)
             shutil.move('./' + args.output_pattern, './output')
         else:
             logger.error(f"The given temporary folder {args.input} was not found!")
@@ -171,10 +182,8 @@ def main(argv=None):
         if os.path.isfile(args.input):
             os.mkdir('assignment')
             mutcount_matrix = pd.read_csv(args.input, index_col=0, sep="\t")
-            #'''Install reference genome''' -- NEW CONTAINER HAS PREINSTALLED REFGEN -- KEPT IN CASE OF DEPRECATION
-            #genInstall.install(args.ref, bash=True)
             '''Run the Matrix Generator Module to generate matrices for SBS96 from input data'''
-            sigpro_func(mutcount_matrix, "matrix", args.output_pattern, args.ref, args.exome, args.context, args.cosmic_version, args.exclude_sigs)
+            sigpro_func(mutcount_matrix, "matrix", args.output_pattern, args.ref, args.refdir, args.exome, args.context, args.cosmic_version, args.exclude_sigs)
             shutil.move('./' + args.output_pattern, './output')
     else:
         raise ValueError(f"The provided information for the input file type is wrong. Please define either 'vcf', 'matrix' or 'maf'!")

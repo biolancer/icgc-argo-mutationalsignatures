@@ -9,7 +9,7 @@ process MATRIXGENERATOR {
     input:
     tuple val(meta), path(input)
     val  filetype
-
+    val  installref_finished
 
     output:
     tuple val(meta), path("Trinucleotide_matrix_${meta.id}_SBS96.txt"),     emit: output_SBS

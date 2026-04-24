@@ -47,6 +47,12 @@ def parse_args(argv=None):
         default="GRCh38"
     )
     parser.add_argument(
+        "--refdir",
+        type=str,
+        help="Path to the directory where the reference genome is installed.",
+        default=""
+    )
+    parser.add_argument(
         "--exome",
         help="Was the input data derived from Exome/Panel data or WGS data?",
         action='store_true'
@@ -118,10 +124,8 @@ def process(argv=None):
             maf_for_analysis = maf_input_routine(args.input, args.ref)
             os.mkdir('matgen')
             maf_for_analysis.to_csv('./matgen/' + args.output_pattern + '.maf', index = False, sep="\t")
-            #'''Install reference genome''' -- NEW CONTAINER HAS PREINSTALLED REFGEN -- KEPT IN CASE OF DEPRECATION
-            genInstall.install(args.ref, bash=True)
             '''Run the Matrix Generator Module to generate matrices for SBS96 from input data'''
-            matrices = matGen.SigProfilerMatrixGeneratorFunc(args.output_pattern, args.ref, './matgen', exome=args.exome, bed_file=None, chrom_based=False, plot=False, tsb_stat=False, seqInfo=False)
+            matrices = matGen.SigProfilerMatrixGeneratorFunc(args.output_pattern, args.ref, './matgen', exome=args.exome, bed_file=None, chrom_based=False, plot=False, tsb_stat=False, seqInfo=False, volume=args.refdir)
             '''Move output files and rename if required.'''
             for file in glob.glob("./matgen/output/SBS/*.SBS96*"):
                 shutil.move(file, './Trinucleotide_matrix_' + args.output_pattern + '_SBS96.txt') ### required
@@ -137,10 +141,8 @@ def process(argv=None):
             os.mkdir('matgen')
             for file in glob.glob(args.input + '/*.vcf'):
                 shutil.copy(file, './matgen')
-            #'''Install reference genome''' -- NEW CONTAINER HAS PREINSTALLED REFGEN -- KEPT IN CASE OF DEPRECATION
-            genInstall.install(args.ref, bash=True)
             '''Run the Matrix Generator Module to generate matrices for SBS96 from input data'''
-            matrices = matGen.SigProfilerMatrixGeneratorFunc(args.output_pattern, args.ref, './matgen', exome=args.exome, bed_file=None, chrom_based=False, plot=False, tsb_stat=False, seqInfo=False)
+            matrices = matGen.SigProfilerMatrixGeneratorFunc(args.output_pattern, args.ref, './matgen', exome=args.exome, bed_file=None, chrom_based=False, plot=False, tsb_stat=False, seqInfo=False, volume=args.refdir)
             '''Move output files and rename if required.'''
             for file in glob.glob("./matgen/output/SBS/*.SBS96*"):
                 shutil.move(file, './Trinucleotide_matrix_' + args.output_pattern + '_SBS96.txt') ### required
