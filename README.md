@@ -14,19 +14,20 @@
 
 ![workflow_diagram](./assets/workflow_diagramm.png)
 
-1. Generate SBS96, DBS78 and ID83 count matrices using ([`SigProfilerMatrixgenerator`](https://osf.io/s93d5/wiki/home/))
-2. Assessment of row orders to ensure full compatibility between the reference catalogues of each assignment tool and the input data.
-3. Assignment of SBS signatures to the COSMIC mutational signature catalogue using ([`SigProfilerExtractor`](https://osf.io/t6j7u/wiki/home/)) and ([`signature.tools.lib`](https://github.com/Nik-Zainal-Group/signature.tools.lib))
-4. Calculation of error thresholds using Kullback-Leibler divergence, root-square mean error, sum of absolute distances and Hellinger Distance.
-5. Generation of a ([`MultiQC`](https://multiqc.info/)) report containing run information, software versions and log data.
+1. (Optional) Install the reference genome for the SigProfiler toolsuite if the `--install_ref` flag is set to true
+2. Generate SBS96, DBS78 and ID83 count matrices using ([`SigProfilerMatrixgenerator`](https://osf.io/s93d5/wiki/home/))
+3. Assessment of row orders to ensure full compatibility between the reference catalogues of each assignment tool and the input data.
+4. Assignment of SBS signatures to the COSMIC mutational signature catalogue using ([`SigProfilerExtractor`](https://osf.io/t6j7u/wiki/home/)) and ([`signature.tools.lib`](https://github.com/Nik-Zainal-Group/signature.tools.lib))
+5. Calculation of error thresholds using Kullback-Leibler divergence, root-square mean error, sum of absolute distances and Hellinger Distance.
+6. Generation of a ([`MultiQC`](https://multiqc.info/)) report containing run information, software versions and log data.
 
 ## Usage
 
 For more details, please refer to the [usage documentation](docs/usage.md). In principle, you can invoke the workflow using the rough command structure:
 
-`nextflow run main.nf -c nextflow.config --input '/path/to/samplesheet' --filetype 'vcf/maf/matrix' --outdir '/path/to/output' --ref 'GRCh37/GRCh38' [OPTIONS] -profile docker/singularity`
+`nextflow run main.nf -c nextflow.config --input '/path/to/samplesheet' --filetype 'vcf/maf/matrix' --outdir '/path/to/output' --ref 'GRCh37/GRCh38' --refdir 'path/to/sigprofilerref/' [OPTIONS] -profile docker/singularity`
 
-You may need `sudo` privilege to run the workflow using `docker`.
+You may need `sudo` privilege to run the workflow using `docker`. We strongly encourage the usage of `singularity` when running the pipeline on shared compute infrastructure.
 
 ### Global options
 
@@ -38,9 +39,10 @@ You may need `sudo` privilege to run the workflow using `docker`.
 
 - `--filetype` (**required**): Defines which input type is passed to the SigProfiler tools, currently supported options are `'MAF'`, `'Matrix'` or `'VCF'`
 - `--ref` (**required**): Defines the reference genome from which the data was generated, currently supported options include `'GRCh37'` and `'GRCh38'`
+- `--refdir` (**required**): Defines the path to the reference genome directory of the SigProfiler toolsuite, equivalent to the Sigprofiler `-volume` flag. The provided path should point to the base directory of the reference genome folder without the `/tsb` suffix for pathing.
 - `--exome`: This flag defines if the SigProfiler tools should run against the COSMIC exome/panel reference instead of the WGS reference, activate with `--exome true`. [default: ```false```]
 - `--context`: Defines which sequence context types should be assigned to the respective COSMIC catalogues for the SigProfiler Assignment module. Valid options include `"96", "288", "1536", "DINUC", and "ID"`. Running the pipeline with default parameters will perform only SBS96 signature assignment. [default: ```'96'```]
-- `--cosmic_version`: Choose the version of the COSMIC signature reference catalogue against which assignment by SigProfiler should be performed. Currently all catalogues up to `3.4` are supported, including `1, 2, 3.1, 3.2` and `3.3`. [default: ```3.4```]
+- `--cosmic_version`: Choose the version of the COSMIC signature reference catalogue against which assignment by SigProfiler should be performed. Currently all catalogues up to `3.4` are supported, including `1, 2, 3.1, 3.2` and `3.3`. [default: ```3.5```]
 - `--exclude_sigs`: Signature groups defined by [COSMIC which could be excluded](https://github.com/alexandrovlab/SigProfilerAssignment?tab=readme-ov-file#-signature-subgroups) from signature assignment for SigProfilerAssignment as comma-separated value string. [default: `None`]
 
 ### signature.tools.lib options

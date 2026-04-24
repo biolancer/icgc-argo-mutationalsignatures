@@ -56,6 +56,12 @@ def parse_args(argv=None):
         default="GRCh38"
     )
     parser.add_argument(
+        "--refdir",
+        type=str,
+        help="Path to the directory where the reference genome is installed.",
+        default=""
+    )
+    parser.add_argument(
         "--context",
         type=str,
         help="Defines which context needs to be extracted, can be an SBS context, DINUC or ID or multiple ones separated by a comma",

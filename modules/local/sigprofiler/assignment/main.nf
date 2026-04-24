@@ -11,6 +11,7 @@ process ASSIGNMENT {
     tuple val(meta), path(input)
     val  filetype
     val  matgen_finished
+    val  installref_finished
 
     output:
     tuple val(meta), path("output")                   , emit: sigprofiler_output

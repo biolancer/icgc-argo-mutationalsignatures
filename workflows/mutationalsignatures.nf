@@ -16,6 +16,7 @@ include { MULTIQC                } from '../modules/nf-core/multiqc/main'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
+include { INSTALLREFERENCE            } from '../modules/local/installreference/main'
 include { MATRIXGENERATOR             } from '../modules/local/sigprofiler/matrixgenerator/main'
 include { ASSESSMENT                  } from '../modules/local/assessment/main'
 include { ASSIGNMENT                  } from '../modules/local/sigprofiler/assignment/main'
@@ -41,13 +42,31 @@ workflow MUTATIONALSIGNATURES {
     ch_multiqc_files = Channel.empty()
 
     //
+    // MODULE: installreference
+    //
+
+    if ( params.install_ref ) {
+        log.info "Installing reference genome using SigProfilerMatrixGenerator install command. This may take a while..."
+        INSTALLREFERENCE (
+            params.ref,
+            params.refdir
+        )
+        installref_finished = INSTALLREFERENCE.out.installref_finished.collect()
+        ch_versions = ch_versions.mix(INSTALLREFERENCE.out.versions)
+    } else {
+        log.info "Skipping reference genome installation as --install_ref flag not set. Ensure reference genome is installed and available at ${params.refdir} before running the pipeline."
+        installref_finished = "installreference_complete"
+    }
+
+    //
     // MODULE : matrixgenerator
     //
 
     if ( params.filetype != 'matrix') {
         MATRIXGENERATOR (
             cohort,
-            params.filetype
+            params.filetype,
+            installref_finished
         )
         ch_versions = ch_versions.mix(MATRIXGENERATOR.out.versions)
     }
@@ -87,7 +106,8 @@ workflow MUTATIONALSIGNATURES {
                 ASSESSMENT.out.reordered_cosmic,
                 signature_catalogue_ch,
                 params.filetype,
-                matgen_finished
+                matgen_finished,
+                installref_finished
             )
             ch_versions = ch_versions.mix(ASSIGNMENT_ALT.out.versions)
 
@@ -97,7 +117,8 @@ workflow MUTATIONALSIGNATURES {
                 cohort,
                 signature_catalogue_ch,
                 params.filetype,
-                MATRIXGENERATOR.out.matgen_finished.collect()
+                MATRIXGENERATOR.out.matgen_finished.collect(),
+                installref_finished
             )
             ch_versions = ch_versions.mix(ASSIGNMENT_ALT.out.versions)
         }
@@ -110,14 +131,16 @@ workflow MUTATIONALSIGNATURES {
             ASSIGNMENT (
                 ASSESSMENT.out.reordered_cosmic,
                 params.filetype,
-                matgen_finished
+                matgen_finished,
+                installref_finished
             )
             ch_versions = ch_versions.mix(ASSIGNMENT.out.versions)
         } else {
             ASSIGNMENT (
                 cohort,
                 params.filetype,
-                MATRIXGENERATOR.out.matgen_finished.collect()
+                MATRIXGENERATOR.out.matgen_finished.collect(),
+                installref_finished
             )
             ch_versions = ch_versions.mix(ASSIGNMENT.out.versions)
         }

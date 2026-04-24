@@ -12,6 +12,7 @@ process ASSIGNMENT_ALT {
     path signature_catalogue
     val  filetype
     val  matgen_finished
+    val  installref_finished
 
     output:
     tuple val(meta), path("output")                   , emit: sigprofiler_output
