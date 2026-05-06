@@ -114,7 +114,7 @@ workflow MUTATIONALSIGNATURES {
         } else {
 
             ASSIGNMENT_ALT (
-                ASSESSMENT.out.reordered_cosmic,
+                cohort,
                 signature_catalogue_ch,
                 params.filetype,
                 MATRIXGENERATOR.out.matgen_finished.collect(),
@@ -137,7 +137,7 @@ workflow MUTATIONALSIGNATURES {
             ch_versions = ch_versions.mix(ASSIGNMENT.out.versions)
         } else {
             ASSIGNMENT (
-                ASSESSMENT.out.reordered_cosmic,
+                cohort,
                 params.filetype,
                 MATRIXGENERATOR.out.matgen_finished.collect(),
                 installref_finished
