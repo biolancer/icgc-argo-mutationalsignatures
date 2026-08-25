@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-'''
+"""
 Load dependencies
-'''
+"""
 
 import os
 import shutil
@@ -14,7 +14,8 @@ import pandas as pd
 from SigProfilerMatrixGenerator import install as genInstall
 from SigProfilerMatrixGenerator.scripts import SigProfilerMatrixGeneratorFunc as matGen
 
-'''CMD line parser'''
+"""CMD line parser"""
+
 
 def parse_args(argv=None):
     """Define and immediately parse command line arguments."""
@@ -26,36 +27,33 @@ def parse_args(argv=None):
         "--filetype",
         type=str,
         help="Defines the provided input filetype - GDC-MAF or a VCF-containing folder",
-        default="vcf"
+        default="vcf",
     )
     parser.add_argument(
-        "--input",
-        type=str,
-        help="Path to input data folder",
-        default=""
+        "--input", type=str, help="Path to input data folder", default=""
     )
     parser.add_argument(
         "--output_pattern",
         type=str,
         help="Output file naming pattern",
-        default="matgen_out"
+        default="matgen_out",
     )
     parser.add_argument(
         "--ref",
         type=str,
         help="Reference genome from which the data was derived.",
-        default="GRCh38"
+        default="GRCh38",
     )
     parser.add_argument(
         "--refdir",
         type=str,
         help="Path to the directory where the reference genome is installed.",
-        default=""
+        default="",
     )
     parser.add_argument(
         "--exome",
         help="Was the input data derived from Exome/Panel data or WGS data?",
-        action='store_true'
+        action="store_true",
     )
     parser.add_argument(
         "--l",
@@ -65,14 +63,30 @@ def parse_args(argv=None):
     )
     return parser.parse_args(argv)
 
+
 logger = logging.getLogger()
 
 ######################################################### Define analysis functions - MAF case
 
+
 ### Function to check if the minimal amount of columns are present in the input MAF to be converted to Sigprofiler format
 def maf_formattest(maf_totest):
-    gdc_format_header = ["Hugo_Symbol", "Chromosome", "Start_position", "End_position", "Strand", "Variant_Classification", "Variant_Type", "Reference_Allele", "Tumor_Seq_Allele1", "Tumor_Seq_Allele2", "dbSNP_RS",
-                        "dbSNP_Val_Status", "Project_Code", "Donor_ID"] ### minimal required columns
+    gdc_format_header = [
+        "Hugo_Symbol",
+        "Chromosome",
+        "Start_position",
+        "End_position",
+        "Strand",
+        "Variant_Classification",
+        "Variant_Type",
+        "Reference_Allele",
+        "Tumor_Seq_Allele1",
+        "Tumor_Seq_Allele2",
+        "dbSNP_RS",
+        "dbSNP_Val_Status",
+        "Project_Code",
+        "Donor_ID",
+    ]  ### minimal required columns
     checkval = []
     for column in gdc_format_header:
         if column in maf_totest.columns:
@@ -82,9 +96,29 @@ def maf_formattest(maf_totest):
     format_test = all(checkval)
     return format_test
 
+
 ### Function to convert MAF input format to SigProfiler input MAF convention, hard-coded
 def mafconverter(maf_toconvert, ref_version):
-    maf_out_raw = pd.DataFrame(columns=["Hugo", "Entrez", "Center", "Genome", "Chrom", "Start", "End", "Strand", "Classification", "Type", "Ref", "Alt1", "Alt2", "dbSNP", "SNP_Val_status", "Tumor_sample"])
+    maf_out_raw = pd.DataFrame(
+        columns=[
+            "Hugo",
+            "Entrez",
+            "Center",
+            "Genome",
+            "Chrom",
+            "Start",
+            "End",
+            "Strand",
+            "Classification",
+            "Type",
+            "Ref",
+            "Alt1",
+            "Alt2",
+            "dbSNP",
+            "SNP_Val_status",
+            "Tumor_sample",
+        ]
+    )
     maf_out_raw["Hugo"] = maf_toconvert["Hugo_Symbol"]
     maf_out_raw["Entrez"] = "."
     maf_out_raw["Center"] = "ICGC"
@@ -100,62 +134,118 @@ def mafconverter(maf_toconvert, ref_version):
     maf_out_raw["Alt2"] = maf_toconvert["Tumor_Seq_Allele2"]
     maf_out_raw["dbSNP"] = maf_toconvert["dbSNP_RS"]
     maf_out_raw["SNP_Val_status"] = maf_toconvert["dbSNP_Val_Status"]
-    maf_out_raw["Tumor_sample"] = maf_toconvert[['Project_Code', 'Donor_ID']].apply(lambda x: '_'.join(x), axis=1)
+    maf_out_raw["Tumor_sample"] = maf_toconvert[["Project_Code", "Donor_ID"]].apply(
+        lambda x: "_".join(x), axis=1
+    )
     return maf_out_raw
+
 
 ###
 def maf_input_routine(in_maf, ref_version):
-        maf_raw = pd.read_table(in_maf) ### expects MAF format following GDC protected data structure
-        format_conform = maf_formattest(maf_raw)
-        if format_conform == True:
-            converted_maf = mafconverter(maf_raw, ref_version)
-            return converted_maf
-        else:
-            logger.error(f'The provided MAF file {maf_raw} does not follow GDC format requirements. Please recheck your input MAF.')
-            raise ValueError(f'The provided MAF file {maf_raw} does not follow GDC format requirements. Please recheck your input MAF.')
+    maf_raw = pd.read_table(
+        in_maf
+    )  ### expects MAF format following GDC protected data structure
+    format_conform = maf_formattest(maf_raw)
+    if format_conform == True:
+        converted_maf = mafconverter(maf_raw, ref_version)
+        return converted_maf
+    else:
+        logger.error(
+            f"The provided MAF file {maf_raw} does not follow GDC format requirements. Please recheck your input MAF."
+        )
+        raise ValueError(
+            f"The provided MAF file {maf_raw} does not follow GDC format requirements. Please recheck your input MAF."
+        )
+
 
 ######################################################### MAIN SCRIPT
 
+
 def process(argv=None):
     args = parse_args(argv)
-    logging.basicConfig(filename='matrixgenerator.log', filemode='w', level=args.l, format="%(asctime)s : [%(levelname)s] %(message)s")
+    logging.basicConfig(
+        filename="matrixgenerator.log",
+        filemode="w",
+        level=args.l,
+        format="%(asctime)s : [%(levelname)s] %(message)s",
+    )
     if args.filetype in ["maf", "MAF"]:
         if os.path.isfile(args.input):
             maf_for_analysis = maf_input_routine(args.input, args.ref)
-            os.mkdir('matgen')
-            maf_for_analysis.to_csv('./matgen/' + args.output_pattern + '.maf', index = False, sep="\t")
-            '''Run the Matrix Generator Module to generate matrices for SBS96 from input data'''
-            matrices = matGen.SigProfilerMatrixGeneratorFunc(args.output_pattern, args.ref, './matgen', exome=args.exome, bed_file=None, chrom_based=False, plot=False, tsb_stat=False, seqInfo=False, volume=args.refdir)
-            '''Move output files and rename if required.'''
+            os.mkdir("matgen")
+            maf_for_analysis.to_csv(
+                "./matgen/" + args.output_pattern + ".maf", index=False, sep="\t"
+            )
+            """Run the Matrix Generator Module to generate matrices for SBS96 from input data"""
+            matrices = matGen.SigProfilerMatrixGeneratorFunc(
+                args.output_pattern,
+                args.ref,
+                "./matgen",
+                exome=args.exome,
+                bed_file=None,
+                chrom_based=False,
+                plot=False,
+                tsb_stat=False,
+                seqInfo=False,
+                volume=args.refdir,
+            )
+            """Move output files and rename if required."""
             for file in glob.glob("./matgen/output/SBS/*.SBS96*"):
-                shutil.move(file, './Trinucleotide_matrix_' + args.output_pattern + '_SBS96.txt') ### required
+                shutil.move(
+                    file, "./Trinucleotide_matrix_" + args.output_pattern + "_SBS96.txt"
+                )  ### required
             for file in glob.glob("./matgen/output/DBS/*.DBS78*"):
-                shutil.move(file, './Trinucleotide_matrix_' + args.output_pattern + '_DBS78.txt') ### optional
+                shutil.move(
+                    file, "./Trinucleotide_matrix_" + args.output_pattern + "_DBS78.txt"
+                )  ### optional
             for file in glob.glob("./matgen/output/ID/*.ID83*"):
-                shutil.move(file, './Trinucleotide_matrix_' + args.output_pattern + '_ID83.txt') ### optional
+                shutil.move(
+                    file, "./Trinucleotide_matrix_" + args.output_pattern + "_ID83.txt"
+                )  ### optional
         else:
             logger.error(f"The given input MAF file {args.input} was not found!")
             raise ValueError(f"The given input MAF file {args.input} was not found!")
     elif args.filetype in ["vcf", "VCF"]:
         if os.path.isdir(args.input):
-            os.mkdir('matgen')
-            for file in glob.glob(args.input + '/*.vcf'):
-                shutil.copy(file, './matgen')
-            '''Run the Matrix Generator Module to generate matrices for SBS96 from input data'''
-            matrices = matGen.SigProfilerMatrixGeneratorFunc(args.output_pattern, args.ref, './matgen', exome=args.exome, bed_file=None, chrom_based=False, plot=False, tsb_stat=False, seqInfo=False, volume=args.refdir)
-            '''Move output files and rename if required.'''
+            os.mkdir("matgen")
+            for file in glob.glob(args.input + "/*.vcf"):
+                shutil.copy(file, "./matgen")
+            """Run the Matrix Generator Module to generate matrices for SBS96 from input data"""
+            matrices = matGen.SigProfilerMatrixGeneratorFunc(
+                args.output_pattern,
+                args.ref,
+                "./matgen",
+                exome=args.exome,
+                bed_file=None,
+                chrom_based=False,
+                plot=False,
+                tsb_stat=False,
+                seqInfo=False,
+                volume=args.refdir,
+            )
+            """Move output files and rename if required."""
             for file in glob.glob("./matgen/output/SBS/*.SBS96*"):
-                shutil.move(file, './Trinucleotide_matrix_' + args.output_pattern + '_SBS96.txt') ### required
+                shutil.move(
+                    file, "./Trinucleotide_matrix_" + args.output_pattern + "_SBS96.txt"
+                )  ### required
             for file in glob.glob("./matgen/output/DBS/*.DBS78*"):
-                shutil.move(file, './Trinucleotide_matrix_' + args.output_pattern + '_DBS78.txt') ### optional
+                shutil.move(
+                    file, "./Trinucleotide_matrix_" + args.output_pattern + "_DBS78.txt"
+                )  ### optional
             for file in glob.glob("./matgen/output/ID/*.ID83*"):
-                shutil.move(file, './Trinucleotide_matrix_' + args.output_pattern + '_ID83.txt') ### optional
+                shutil.move(
+                    file, "./Trinucleotide_matrix_" + args.output_pattern + "_ID83.txt"
+                )  ### optional
         else:
             logger.error(f"The given temporary folder {args.input} was not found!")
             raise ValueError(f"The given temporary folder {args.input} was not found!")
     else:
-        logger.error(f"The provided information for the input file type is wrong. Please define either 'vcf' or 'maf'!")
-        raise ValueError(f"The provided information for the input file type is wrong. Please define either 'vcf' or 'maf'!")
+        logger.error(
+            f"The provided information for the input file type is wrong. Please define either 'vcf' or 'maf'!"
+        )
+        raise ValueError(
+            f"The provided information for the input file type is wrong. Please define either 'vcf' or 'maf'!"
+        )
 
 
 if __name__ == "__main__":

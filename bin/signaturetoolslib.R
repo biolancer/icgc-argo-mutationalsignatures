@@ -6,25 +6,33 @@
 library(signature.tools.lib)
 library("optparse")
 
-option_list = list(
-    make_option(c("-i", "--input_file"), type="character", default=NULL,
-                help="Matrix of counts", metavar="character"),
-    make_option(c("-o", "--output_name"), type="character", default=NULL,
-                help="Output file", metavar="character"),
-    make_option(c("-n", "--boots"), type="integer", default=NULL,
-                help="Number of bootstrapping iterations", metavar="integer"),
-    make_option(c("-c", "--catalogue"), type="character", default=NULL,
-                help="Catalogue used for assignment", metavar="character"),
-    make_option(c("-t", "--threads"), type="integer", default=NULL,
-                help="Threads used for assignment", metavar="integer")
-);
-
-opt_parser = OptionParser(option_list=option_list);
-opt = parse_args(opt_parser);
-
-if (is.null(opt$input_file)){
+option_list <- list(
+    make_option(c("-i", "--input_file"),
+        type = "character", default = NULL,
+        help = "Matrix of counts", metavar = "character"
+    ),
+    make_option(c("-o", "--output_name"),
+        type = "character", default = NULL,
+        help = "Output file", metavar = "character"
+    ),
+    make_option(c("-n", "--boots"),
+        type = "integer", default = NULL,
+        help = "Number of bootstrapping iterations", metavar = "integer"
+    ),
+    make_option(c("-c", "--catalogue"),
+        type = "character", default = NULL,
+        help = "Catalogue used for assignment", metavar = "character"
+    ),
+    make_option(c("-t", "--threads"),
+        type = "integer", default = NULL,
+        help = "Threads used for assignment", metavar = "integer"
+    )
+)
+opt_parser <- OptionParser(option_list = option_list)
+opt <- parse_args(opt_parser)
+if (is.null(opt$input_file)) {
     print_help(opt_parser)
-    stop("Missing some input arguments... Exiting...", call.=FALSE)
+    stop("Missing some input arguments... Exiting...", call. = FALSE)
 }
 
 ## Set seed used to match expected output
@@ -43,19 +51,20 @@ if (opt$catalogue == "COSMIC30_subs_signatures") {
 }
 
 ## Import matrix of counts
-mut_mat_ICGC <- read.table(INPUT_MAT, row.names = 1, header=TRUE, check.names = FALSE)
+mut_mat_ICGC <- read.table(INPUT_MAT, row.names = 1, header = TRUE, check.names = FALSE)
 
 ## Function for signature attribution
 assignSignatures <- function(input_matrix, sig_matrix, boots_n, threads) {
-
-## use Fit function, FitMS is still undergoing testing
-## LS: Potentially extend for non-COSMIC signatures or organ-specific
-    subs_fit_res <- signature.tools.lib::Fit(catalogues = input_matrix,
-                                            exposureFilterType = "giniScaledThreshold",
-                                            signatures = sig_matrix,
-                                            useBootstrap = TRUE,
-                                            nboot = boots_n,
-                                            nparallel = threads)
+    ## use Fit function, FitMS is still undergoing testing
+    ## LS: Potentially extend for non-COSMIC signatures or organ-specific
+    subs_fit_res <- signature.tools.lib::Fit(
+        catalogues = input_matrix,
+        exposureFilterType = "giniScaledThreshold",
+        signatures = sig_matrix,
+        useBootstrap = TRUE,
+        nboot = boots_n,
+        nparallel = threads
+    )
     return(subs_fit_res)
 }
 
@@ -64,4 +73,8 @@ assignSignatures <- function(input_matrix, sig_matrix, boots_n, threads) {
 sign_res <- assignSignatures(mut_mat_ICGC, CAT, BOOTS, THREADS)
 
 ### Save output as JSON
-signature.tools.lib::fitToJSON(sign_res,paste0(OUT_NAME, ".json"))
+signature.tools.lib::fitToJSON(sign_res, paste0(OUT_NAME, ".json"))
+
+### Save output as TSV
+exposure_table <- sign_res$exposures
+signature.tools.lib::writeTable(exposure_table, paste0(OUT_NAME, ".tsv"))

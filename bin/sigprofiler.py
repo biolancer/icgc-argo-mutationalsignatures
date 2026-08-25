@@ -19,6 +19,7 @@ from SigProfilerAssignment import Analyzer as sig
 CMD line parser
 """
 
+
 def parse_args(argv=None):
     """Define and immediately parse command line arguments."""
     parser = argparse.ArgumentParser(
@@ -29,54 +30,48 @@ def parse_args(argv=None):
         "--filetype",
         type=str,
         help="Defines the provided input filetype - GDC-MAF or a VCF-containing folder",
-        default="vcf"
+        default="vcf",
     )
     parser.add_argument(
-        "--input",
-        type=str,
-        help="Path to input data folder",
-        default=""
+        "--input", type=str, help="Path to input data folder", default=""
     )
     parser.add_argument(
-        "--output_pattern",
-        type=str,
-        help="Identifier of the output files.",
-        default=""
+        "--output_pattern", type=str, help="Identifier of the output files.", default=""
     )
     parser.add_argument(
         "--ref",
         type=str,
         help="Reference genome from which the data was derived.",
-        default="GRCh38"
+        default="GRCh38",
     )
     parser.add_argument(
         "--refdir",
         type=str,
         help="Path to the directory where the reference genome is installed.",
-        default=""
+        default="",
     )
     parser.add_argument(
         "--exome",
         help="Was the input data derived from Exome/Panel data or WGS data?",
-        action='store_true'
+        action="store_true",
     )
     parser.add_argument(
         "--context",
         type=str,
         help="Defines which context needs to be extracted, can be an SBS context, DINUC or ID or multiple ones separated by a comma",
-        default="96"
+        default="96",
     )
     parser.add_argument(
         "--cosmic_version",
         type=float,
         help="Which COSMIC signature reference catalogue should be used?",
-        default=3
+        default=3,
     )
     parser.add_argument(
         "--exclude_sigs",
         type=str,
         help="Exclude signature groups from assignment.",
-        default=None
+        default=None,
     )
     parser.add_argument(
         "--l",
@@ -86,14 +81,30 @@ def parse_args(argv=None):
     )
     return parser.parse_args(argv)
 
+
 ############################################################################################################
 
 ######################################################### Define analysis functions - MAF case
 
+
 ### Function to check if the minimal amount of columns are present in the input MAF to be converted to Sigprofiler format
 def maf_formattest(maf_totest):
-    gdc_format_header = ["Hugo_Symbol", "Chromosome", "Start_position", "End_position", "Strand", "Variant_Classification", "Variant_Type", "Reference_Allele", "Tumor_Seq_Allele1", "Tumor_Seq_Allele2", "dbSNP_RS",
-                        "dbSNP_Val_Status", "Project_Code", "Donor_ID"] ### minimal required columns
+    gdc_format_header = [
+        "Hugo_Symbol",
+        "Chromosome",
+        "Start_position",
+        "End_position",
+        "Strand",
+        "Variant_Classification",
+        "Variant_Type",
+        "Reference_Allele",
+        "Tumor_Seq_Allele1",
+        "Tumor_Seq_Allele2",
+        "dbSNP_RS",
+        "dbSNP_Val_Status",
+        "Project_Code",
+        "Donor_ID",
+    ]  ### minimal required columns
     checkval = []
     for column in gdc_format_header:
         if column in maf_totest.columns:
@@ -103,9 +114,29 @@ def maf_formattest(maf_totest):
     format_test = all(checkval)
     return format_test
 
+
 ### Function to convert MAF input format to SigProfiler input MAF convention, hard-coded
 def mafconverter(maf_toconvert, ref_version):
-    maf_out_raw = pd.DataFrame(columns=["Hugo", "Entrez", "Center", "Genome", "Chrom", "Start", "End", "Strand", "Classification", "Type", "Ref", "Alt1", "Alt2", "dbSNP", "SNP_Val_status", "Tumor_sample"])
+    maf_out_raw = pd.DataFrame(
+        columns=[
+            "Hugo",
+            "Entrez",
+            "Center",
+            "Genome",
+            "Chrom",
+            "Start",
+            "End",
+            "Strand",
+            "Classification",
+            "Type",
+            "Ref",
+            "Alt1",
+            "Alt2",
+            "dbSNP",
+            "SNP_Val_status",
+            "Tumor_sample",
+        ]
+    )
     maf_out_raw["Hugo"] = maf_toconvert["Hugo_Symbol"]
     maf_out_raw["Entrez"] = "."
     maf_out_raw["Center"] = "ICGC"
@@ -121,72 +152,137 @@ def mafconverter(maf_toconvert, ref_version):
     maf_out_raw["Alt2"] = maf_toconvert["Tumor_Seq_Allele2"]
     maf_out_raw["dbSNP"] = maf_toconvert["dbSNP_RS"]
     maf_out_raw["SNP_Val_status"] = maf_toconvert["dbSNP_Val_Status"]
-    maf_out_raw["Tumor_sample"] = maf_toconvert[['Project_Code', 'Donor_ID']].apply(lambda x: '_'.join(x), axis=1)
+    maf_out_raw["Tumor_sample"] = maf_toconvert[["Project_Code", "Donor_ID"]].apply(
+        lambda x: "_".join(x), axis=1
+    )
     return maf_out_raw
+
 
 ###
 def maf_input_routine(in_maf, ref_version):
-        maf_raw = pd.read_table(in_maf) ### expects MAF format following GDC protected data structure
-        format_conform = maf_formattest(maf_raw)
-        if format_conform == True:
-            converted_maf = mafconverter(maf_raw, ref_version)
-            return converted_maf
-        else:
-            raise ValueError(f"The provided MAF file {maf_raw} does not follow GDC format requirements. Please recheck your input MAF.")
+    maf_raw = pd.read_table(
+        in_maf
+    )  ### expects MAF format following GDC protected data structure
+    format_conform = maf_formattest(maf_raw)
+    if format_conform == True:
+        converted_maf = mafconverter(maf_raw, ref_version)
+        return converted_maf
+    else:
+        raise ValueError(
+            f"The provided MAF file {maf_raw} does not follow GDC format requirements. Please recheck your input MAF."
+        )
+
 
 logger = logging.getLogger()
 
 ############################################################################################################
-'''
+"""
 Define the signature assignment routine
-'''
+"""
 
-def sigpro_func(sample, filetype, output_pattern, ref, refdir, exome, context, cosmic_version, exclude_sigs):
-    sig.cosmic_fit(samples=sample,
-                   output=output_pattern,
-                   input_type=filetype,
-                   genome_build=ref,
-                   exome=exome,
-                   context_type=context,
-                   cosmic_version=cosmic_version,
-                   exclude_signature_subgroups=exclude_sigs,
-                   make_plots=False,
-                   volume=refdir)
+
+def sigpro_func(
+    sample,
+    filetype,
+    output_pattern,
+    ref,
+    refdir,
+    exome,
+    context,
+    cosmic_version,
+    exclude_sigs,
+):
+    sig.cosmic_fit(
+        samples=sample,
+        output=output_pattern,
+        input_type=filetype,
+        genome_build=ref,
+        exome=exome,
+        context_type=context,
+        cosmic_version=cosmic_version,
+        exclude_signature_subgroups=exclude_sigs,
+        make_plots=False,
+        volume=refdir,
+    )
+
 
 ############################################################################################################
 
+
 def main(argv=None):
     args = parse_args(argv)
+    ### Correctly parse the information on excluded signature groups:
+    if args.exclude_sigs != None:
+        excluded_sigs = args.exclude_sigs
+        excluded_sigs_list = excluded_sigs.split(",")
+    else:
+        excluded_sigs_list = None
+
     if args.filetype in ["maf", "MAF"]:
         if os.path.isfile(args.input):
             maf_for_analysis = maf_input_routine(args.input, args.ref)
-            os.mkdir('assignment')
-            maf_for_analysis.to_csv('./assignment/' + args.output_pattern + '.maf', index = False, sep="\t")
-            '''Run the Matrix Generator Module to generate matrices for SBS96 from input data'''
-            sigpro_func("./assignment", "vcf", args.output_pattern, args.ref, args.refdir, args.exome, args.context, args.cosmic_version, args.exclude_sigs)
-            shutil.move('./' + args.output_pattern, './output')
+            os.mkdir("assignment")
+            maf_for_analysis.to_csv(
+                "./assignment/" + args.output_pattern + ".maf", index=False, sep="\t"
+            )
+            """Run the Matrix Generator Module to generate matrices for SBS96 from input data"""
+            sigpro_func(
+                "./assignment",
+                "vcf",
+                args.output_pattern,
+                args.ref,
+                args.refdir,
+                args.exome,
+                args.context,
+                args.cosmic_version,
+                excluded_sigs_list,
+            )
+            shutil.move("./" + args.output_pattern, "./output")
         else:
             raise ValueError(f"The given input MAF file {args.input} was not found!")
     elif args.filetype in ["vcf", "VCF"]:
         if os.path.isdir(args.input):
-            os.mkdir('assignment')
-            for file in glob.glob(args.input + '/*.vcf'):
-                shutil.copy(file, './assignment')
-            '''Run the Matrix Generator Module to generate matrices for SBS96 from input data'''
-            sigpro_func("./assignment", "vcf",args.output_pattern, args.ref, args.refdir, args.exome, args.context, args.cosmic_version, args.exclude_sigs)
-            shutil.move('./' + args.output_pattern, './output')
+            os.mkdir("assignment")
+            for file in glob.glob(args.input + "/*.vcf"):
+                shutil.copy(file, "./assignment")
+            """Run the Matrix Generator Module to generate matrices for SBS96 from input data"""
+            sigpro_func(
+                "./assignment",
+                "vcf",
+                args.output_pattern,
+                args.ref,
+                args.refdir,
+                args.exome,
+                args.context,
+                args.cosmic_version,
+                excluded_sigs_list,
+            )
+            shutil.move("./" + args.output_pattern, "./output")
         else:
             logger.error(f"The given temporary folder {args.input} was not found!")
             raise ValueError(f"The given temporary folder {args.input} was not found!")
-    elif args.filetype in ['matrix', 'Matrix', 'counts', 'Counts']:
+    elif args.filetype in ["matrix", "Matrix", "counts", "Counts"]:
         if os.path.isfile(args.input):
-            os.mkdir('assignment')
+            os.mkdir("assignment")
             mutcount_matrix = pd.read_csv(args.input, index_col=0, sep="\t")
-            '''Run the Matrix Generator Module to generate matrices for SBS96 from input data'''
-            sigpro_func(mutcount_matrix, "matrix", args.output_pattern, args.ref, args.refdir, args.exome, args.context, args.cosmic_version, args.exclude_sigs)
-            shutil.move('./' + args.output_pattern, './output')
+            """Run the Matrix Generator Module to generate matrices for SBS96 from input data"""
+            sigpro_func(
+                mutcount_matrix,
+                "matrix",
+                args.output_pattern,
+                args.ref,
+                args.refdir,
+                args.exome,
+                args.context,
+                args.cosmic_version,
+                excluded_sigs_list,
+            )
+            shutil.move("./" + args.output_pattern, "./output")
     else:
-        raise ValueError(f"The provided information for the input file type is wrong. Please define either 'vcf', 'matrix' or 'maf'!")
+        raise ValueError(
+            f"The provided information for the input file type is wrong. Please define either 'vcf', 'matrix' or 'maf'!"
+        )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     sys.exit(main())

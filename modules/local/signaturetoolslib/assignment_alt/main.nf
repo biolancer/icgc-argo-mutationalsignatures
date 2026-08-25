@@ -13,6 +13,7 @@ process SIGNATURETOOLSLIB_ALT {
 
     output:
     tuple val(meta), path("*.json")                 , emit: json
+    tuple val(meta), path("*.tsv")                  , emit: tsv
     path "versions.yml"                             , emit: versions
 
     when:
